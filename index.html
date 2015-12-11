@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+<title>九宫格抽奖</title>
+<style>
+html,body,ul{margin:0;padding:0;}
+li{list-style:none;}
+a{text-decoration:none;}
+
+#lottery{
+	width: 100%;
+	margin: 0 auto;
+}
+
+#lottery li{
+	width: 100%;
+	height: 110px;
+	text-align: center;
+}
+
+#lottery span{
+	width: 33%;
+	height: 110px;
+	line-height: 110px;
+	float: left;
+	display: block;
+	color: #333;
+	font-size: 21px;
+	background-color: #ddd;
+}
+
+#lottery span.start{
+	background-color: red;
+	color:#fff;
+}
+
+#lottery span.active{
+	color: red;
+	background-color: yellow;
+}
+
+/*3个点点点动画*/
+.dotting {
+    display: inline-block; width: 10px; min-height: 2px;
+    padding-right: 2px;
+    border-left: 2px solid currentColor; border-right: 2px solid currentColor;   
+    background-color: currentColor; background-clip: content-box;
+    box-sizing: border-box;
+    animation: dot 4s infinite step-start both;
+    *zoom: expression(this.innerHTML = '...'); /* IE7 */
+}
+.dotting:before { content: '...'; } /* IE8 */
+.dotting::before { content: ''; }
+:root .dotting { margin-left: 2px; padding-left: 2px; } /* IE9+ */
+
+@keyframes dot {
+    25% { border-color: transparent; background-color: transparent; }          /* 0个点 */
+    50% { border-right-color: transparent; background-color: transparent; }    /* 1个点 */
+    75% { border-right-color: transparent; }                                   /* 2个点 */
+}
+</style>
+</head>
+<body>
+	
+<div id="lottery">
+	<ul>
+		<li>
+			<span class="lottery-unit lottery-unit-0">1</span>
+			<span class="lottery-unit lottery-unit-1">2</span>
+			<span class="lottery-unit lottery-unit-2">3</span>
+		</li>
+		<li>
+			<span class="lottery-unit lottery-unit-7">8</span>
+			<span class="start">开始抽奖<em class="dotting"></em></span>
+			<span class="lottery-unit lottery-unit-3">4</span>
+		</li>
+		<li>
+			<span class="lottery-unit lottery-unit-6">7</span>
+			<span class="lottery-unit lottery-unit-5">6</span>
+			<span class="lottery-unit lottery-unit-4">5</span>
+		</li>
+	</ul>
+</div>
+<script src="js/zepto.min.js"></script>
+<script>
+var click = false;
+var lottery = {
+	index:0,	//当前转动到哪个位置
+	count:0,	//总共有多少个位置
+	timer:0,	//setTimeout的ID，用clearTimeout清除
+	speed:200,	//初始转动速度
+	times:0,	//转动次数
+	cycle:50,	//转动基本次数：即至少需要转动多少次再进入抽奖环节
+	prize:-1,	//中奖位置
+	init:function(id){
+		if ($("#"+id).find(".lottery-unit").length > 0) {
+			$lottery = $("#"+id);
+			$units = $lottery.find(".lottery-unit");
+			this.obj = $lottery;
+			this.count = $units.length;
+			$lottery.find(".lottery-unit-"+this.index).addClass("active");
+		}
+	},
+	roll:function(){
+		var index = this.index, count = this.count, lottery = this.obj;
+		$(lottery).find(".lottery-unit-"+index).removeClass("active");
+		index += 1;
+		if(index > count-1) index = 0;
+		$(lottery).find(".lottery-unit-"+index).addClass("active");
+		this.index = index;
+		return false;
+	},
+	stop:function(){
+		clearTimeout(lottery.timer);
+		lottery.prize = -1;
+		lottery.times = 0;
+		click = false;
+	}
+};
+
+function roll(){
+	lottery.times += 1;
+	lottery.roll();
+	if (lottery.times > lottery.cycle+10 && lottery.prize == lottery.index) {
+		alert("恭喜您中了："+(lottery.index+1)+"等奖！");
+		lottery.stop();
+	}else{
+		if (lottery.times < lottery.cycle) {
+			lottery.speed -= 5;
+		}else if(lottery.times == lottery.cycle) {
+			var index = Math.random()*(lottery.count)|0;
+			lottery.prize = index;		
+		}else{
+			if (lottery.times > lottery.cycle+10 && ((lottery.prize == 0 && lottery.index == 7) || lottery.prize == lottery.index+1)) {
+				lottery.speed += 110;
+			}else{
+				lottery.speed += 20;
+			}
+		}
+		if (lottery.speed < 40) lottery.speed = 40;
+		lottery.timer = setTimeout(roll,lottery.speed);
+	}
+	return false;
+}
+
+$(function(){
+	lottery.init('lottery');
+	$(".start").click(function(){
+		if (click) {
+			return false;
+		}else{
+			lottery.speed = 150;
+			roll();
+			click = true;
+			return false;
+		}
+	});
+});
+</script>
+</body>
+</html>
